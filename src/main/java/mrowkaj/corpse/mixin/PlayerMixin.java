@@ -4,6 +4,7 @@ import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.mojang.authlib.GameProfile;
 import mrowkaj.corpse.ICorpse;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
@@ -15,6 +16,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.ResolvableProfile;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -40,12 +42,29 @@ public abstract class PlayerMixin extends Avatar implements ContainerUser {
             original.call(instance);
             return;
         }
-        ArmorStand corpse = new ArmorStand(level, this.getX(), this.getY(), this.getZ());
+        double position = this.getY();
+        if(position <= -64) {
+            position = 321.0;
+            BlockPos pos = new BlockPos((int) this.getX(), 319, (int) this.getZ());
+            boolean found = false;
+            while (pos.getY() >= -64) {
+                if(!level.getBlockState(pos).is(Blocks.AIR)) {
+                    found = true;
+                    break;
+                }
+                pos = pos.below();
+                position--;
+            }
+            if(!found)
+                position = 70.0;
+        }
+        ArmorStand corpse = new ArmorStand(level, this.getX(), position, this.getZ());
         corpse.setNoGravity(true);
         corpse.setShowArms(true);
         corpse.setCustomName(Component.literal(gameProfile.name()));
         corpse.setCustomNameVisible(true);
         corpse.setInvulnerable(true);
+        corpse.setYRot(getYRot());
 
         ItemStack headStack = new ItemStack(Items.PLAYER_HEAD);
 
