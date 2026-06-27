@@ -1,0 +1,31 @@
+{
+	"schemaVersion": 1,
+	"id": "corpse",
+	"version": "${version}",
+	"name": "corpse",
+	"description": "Corpsesa",
+	"authors": [
+		"mrowkaj"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/corpse/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"mrowkaj.corpse.Corpse"
+		]
+	},
+	"mixins": [
+		"corpse.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.19.3",
+		"minecraft": "~26.2",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}
