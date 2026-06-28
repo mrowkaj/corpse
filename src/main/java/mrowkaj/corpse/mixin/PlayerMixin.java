@@ -75,15 +75,16 @@ public abstract class PlayerMixin extends Avatar implements ContainerUser {
         headStack.set(DataComponents.PROFILE, resolvableProfile);
         corpse.setItemSlot(EquipmentSlot.HEAD, headStack);
 
-        ICorpse corpseInventory = (ICorpse)corpse;
+        ICorpse corpseInterface = (ICorpse)corpse;
         NonNullList<ItemStack> corpseInventoryStacks = NonNullList.withSize(36 + 8, ItemStack.EMPTY);
-        corpseInventory.corpse$setCorpseInventory(corpseInventoryStacks);
+        corpseInterface.corpse$setCorpseInventory(corpseInventoryStacks);
 
         int index = 0;
         for(ItemStack stack : instance) {
             corpseInventoryStacks.set(index, stack.copy());
             index++;
         }
+        corpseInterface.corpse$checkEmpty();
         level.addFreshEntity(corpse);
     }
 }

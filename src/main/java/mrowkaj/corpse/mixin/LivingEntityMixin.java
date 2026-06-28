@@ -2,11 +2,9 @@ package mrowkaj.corpse.mixin;
 
 import mrowkaj.corpse.ICorpse;
 import net.minecraft.core.NonNullList;
-import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import org.jspecify.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
@@ -21,10 +19,9 @@ public abstract class LivingEntityMixin {
     public abstract @Nullable ItemEntity drop(ItemStack itemStack, boolean randomly, boolean thrownFromHand);
 
     @Inject(method = "tick", at = @At("HEAD"), cancellable = true)
-    private void corpse$armorStandTick(CallbackInfo ci) {
-        if(this instanceof ICorpse corpse && corpse.corpse$tick()) {
+    private void corpse$drop(CallbackInfo ci) {
+        if(this instanceof ICorpse corpse && corpse.corpse$tick())
             ci.cancel();
-        }
     }
 
     @Inject(method = "remove", at = @At("HEAD"))

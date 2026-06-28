@@ -2,12 +2,18 @@ package mrowkaj.corpse.mixin;
 
 import mrowkaj.corpse.ICorpse;
 import net.minecraft.core.NonNullList;
+import net.minecraft.core.particles.BlockParticleOption;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import org.spongepowered.asm.mixin.Mixin;
@@ -22,6 +28,9 @@ import java.util.Optional;
 public abstract class ArmorStandMixin extends LivingEntity implements ICorpse {
 	@Unique
 	NonNullList<ItemStack> corpse$corpseInventory = null;
+
+	@Unique
+	boolean corpse$empty = false;
 
 	@Unique
 	int corpse$ticksEmpty = 0;
@@ -41,23 +50,55 @@ public abstract class ArmorStandMixin extends LivingEntity implements ICorpse {
 	}
 
 	@Override
-	public boolean corpse$tick() {
-		if(corpse$corpseInventory == null)
-			return false;
-		boolean empty = true;
+	public void corpse$checkEmpty() {
+		if(corpse$empty)
+			return;
+		corpse$empty = true;
 		for(ItemStack stack : corpse$corpseInventory) {
 			if(!stack.isEmpty()) {
-				empty = false;
+				corpse$empty = false;
 				break;
 			}
 		}
-		if(empty)
-			corpse$ticksEmpty++;
-		if(corpse$ticksEmpty >= 6000) {
+		if(corpse$empty) {
+			((ServerLevel)level()).sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, Blocks.DIRT.defaultBlockState()), this.getX(), this.getY(), this.getZ(), 200, (double)0.3F, (double)0.3F, (double)0.3F, (double)0.15F);
+			this.setCustomName(Component.empty());
+			this.setCustomNameVisible(false);
+		}
+	}
+
+	@Override
+	public boolean corpse$tick() {
+		if(!corpse$empty)
+			return false;
+
+		corpse$ticksEmpty++;
+		BlockState state = getBlockStateOn();
+		if(!state.is(Blocks.AIR)) {
+			BlockParticleOption particleOption = new BlockParticleOption(ParticleTypes.BLOCK_CRUMBLE, state);
+			ServerLevel serverLevel = (ServerLevel) level();
+			serverLevel.sendParticles(
+					particleOption,
+					this.getX(), this.getY(), this.getZ(),
+					20,
+					0.25, 0.25, 0.25,
+					0.15
+			);
+		}
+		if(corpse$ticksEmpty >= 120) {
+			this.setNoGravity(false);
+			this.noPhysics = true;
+		}
+		if(corpse$ticksEmpty >= 140) {
 			this.discard();
 			return true;
 		}
 		return false;
+	}
+
+	@Override
+	public boolean corpse$isEmpty() {
+		return corpse$empty;
 	}
 
 	@Inject(method = "addAdditionalSaveData", at = @At("HEAD"))
@@ -65,7 +106,7 @@ public abstract class ArmorStandMixin extends LivingEntity implements ICorpse {
 		if(corpse$corpseInventory != null) {
 			ValueOutput corpseOutput = output.child("Corpse");
 			ContainerHelper.saveAllItems(corpseOutput, corpse$corpseInventory);
-			corpseOutput.putInt("corpseTickEmpty", corpse$ticksEmpty);
+			corpseOutput.putInt("ticksEmpty", corpse$ticksEmpty);
 		}
 	}
 
@@ -75,9 +116,9 @@ public abstract class ArmorStandMixin extends LivingEntity implements ICorpse {
 		if(optionalInput.isEmpty())
 			return;
 		ValueInput corpseInput = optionalInput.get();
+		corpse$ticksEmpty = corpseInput.getIntOr("ticksEmpty", 0);
 		corpse$corpseInventory = NonNullList.withSize(36 + 8, ItemStack.EMPTY);
 		ContainerHelper.loadAllItems(corpseInput, corpse$corpseInventory);
-		Optional<Integer> optionalTicksEmpty = corpseInput.getInt("corpseTickEmpty");
-        corpse$ticksEmpty = optionalTicksEmpty.orElse(0);
+		corpse$checkEmpty();
 	}
 }

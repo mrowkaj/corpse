@@ -1,7 +1,6 @@
 package mrowkaj.corpse;
 
 import net.minecraft.world.Container;
-import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ChestMenu;
@@ -30,11 +29,14 @@ public class CorpseMenu extends ChestMenu {
                     return;
                 } else {
                     corpse.corpse$getCorpseInventory().set(slotId, ItemStack.EMPTY);
+                    corpse.corpse$checkEmpty();
                 }
             }
 
-            if(clickType == ContainerInput.QUICK_MOVE)
+            if(clickType == ContainerInput.QUICK_MOVE) {
                 corpse.corpse$getCorpseInventory().set(slotId, ItemStack.EMPTY);
+                corpse.corpse$checkEmpty();
+            }
 
             if (clickType == ContainerInput.QUICK_CRAFT) {
                 return;
